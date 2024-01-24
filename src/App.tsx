@@ -8,7 +8,7 @@ import * as tf from '@tensorflow/tfjs';
 
 type TeachableMachineModel = {
   predict: (input: any) => Promise<any>;
-  // 필요에 따라 추가 메서드나 프로퍼티를 정의하세요.
+  
 };
 
 function ProjectsFormComponent() {
