@@ -1,17 +1,43 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Hands } from '@mediapipe/hands';
 import { Camera } from '@mediapipe/camera_utils';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import '@tensorflow/tfjs-backend-webgl';
+import * as tmImage from '@teachablemachine/image';
+import * as tf from '@tensorflow/tfjs';
+
+type TeachableMachineModel = {
+  predict: (input: any) => Promise<any>;
+  // 필요에 따라 추가 메서드나 프로퍼티를 정의하세요.
+};
 
 function ProjectsFormComponent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [model, setModel] = useState<TeachableMachineModel | null >(null);
+  const URL = 'https://teachablemachine.withgoogle.com/models/w-abGSy87/'
+
+
+  async function init() {
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+    const tmModel = await tmImage.load(modelURL, metadataURL);
+    setModel(tmModel);
+  }
+
+  const prediceWithModel = async (image: HTMLVideoElement) => {
+    // console.log(model)
+    if (model && image)
+    {
+      const prediction = await model.predict(image)
+      // console.log(prediction);
+    }
+  }
 
   useEffect(() => {
+    init();
     const videoElement = videoRef.current;
     const canvasElement = canvasRef.current;
-
     const setupCamera = async () => {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -91,7 +117,7 @@ function ProjectsFormComponent() {
         canvasElement.height = videoElement.videoHeight;
         const ctx = canvasElement.getContext('2d');
         const detect = async (timestamp: number) => {
-          if (previousTimestamp == null || timestamp - previousTimestamp >= (1000 / targetFPS)) {
+          // if (previousTimestamp == null || timestamp - previousTimestamp >= (1000 / targetFPS)) {
             previousTimestamp = timestamp;
             const poses = await detector.estimatePoses(videoElement);
             if (ctx) {
@@ -145,21 +171,27 @@ function ProjectsFormComponent() {
                   }
                 }); 
               });
+              // if (videoElement) {
+              //   prediceWithModel(videoElement);
+              // }
               if (detectHands) {
                 detectHands();
               }
             }
             requestAnimationFrame(detect);
           }          
-        };
-        requestAnimationFrame(detect);
-      }
+          requestAnimationFrame(detect);
+        }
+        
+      // }
     };
-
-    setupCamera().then(() => {
-      setupHands();
-      detectPose();
-    });
+    tf.ready().then(() => {
+      setupCamera().then(() => {
+        setupHands();
+        detectPose();
+      });
+    })
+    
 
     
   }, []);
